@@ -7,6 +7,9 @@ const categoryImages = {
     'azilal': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=600&auto=format&fit=crop',
     'boucherouite': 'https://images.unsplash.com/photo-1550581190-9c1c48d21d6c?q=80&w=600&auto=format&fit=crop',
     'kilim': 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?q=80&w=600&auto=format&fit=crop',
+    'coussins': 'https://images.unsplash.com/photo-1579656335342-5f3b0928e4eb?q=80&w=600&auto=format&fit=crop',
+    'plaids': 'https://images.unsplash.com/photo-1606131731446-5568d87113aa?q=80&w=600&auto=format&fit=crop',
+    'tableaux': 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop',
 };
 
 async function getProducts(categorySlug) {
