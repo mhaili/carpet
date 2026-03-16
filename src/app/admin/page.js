@@ -50,6 +50,9 @@ export default async function AdminDashboard() {
                     <p>Vue d'ensemble de la boutique de tapis</p>
                 </div>
                 <div>
+                    <Link href="/admin/products" className="btn-primary" style={{ marginRight: '1rem' }}>
+                        ✚ Ajouter un produit
+                    </Link>
                     <Link href="/account" className="btn-secondary" style={{ marginRight: '1rem' }}>
                         Retour à l'espace client
                     </Link>

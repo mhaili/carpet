@@ -5,6 +5,8 @@ import { useState, useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
 import { useCart } from './CartProvider';
 
+import AmazighSymbol from './AmazighSymbol';
+
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
   const { cartCount, isInitialized } = useCart();
@@ -28,16 +30,18 @@ export default function Header() {
         <div className="header-inner">
           {/* Logo */}
           <Link href="/" className="site-logo">
-            Amazigh<em>Artes</em>
+            <AmazighSymbol size={scrolled ? 24 : 32} animate={true} color="var(--accent-color)" strokeWidth={3} />
+            <span>Amazigh<em>Artes</em></span>
           </Link>
 
           {/* Desktop Nav */}
           <nav className="site-nav" aria-label="Navigation principale">
             <Link href="/catalogue" className="nav-link">Catalogue</Link>
-            <Link href="/catalogue?category=beni-ouarain" className="nav-link">Beni Ouarain</Link>
-            <Link href="/catalogue?category=azilal" className="nav-link">Azilal</Link>
-            <Link href="/catalogue?category=kilim" className="nav-link">Kilims</Link>
-            <Link href="/about" className="nav-link">Notre Histoire</Link>
+            <Link href="/catalogue?category=beni-ouarain" className="nav-link">Tapis</Link>
+            <Link href="/catalogue?category=coussins" className="nav-link">Coussins</Link>
+            <Link href="/catalogue?category=plaids" className="nav-link">Plaids</Link>
+            <Link href="/catalogue?category=tableaux" className="nav-link">Art Berbère</Link>
+            <Link href="/about" className="nav-link">Histoire</Link>
           </nav>
 
           {/* Actions */}
@@ -100,10 +104,11 @@ export default function Header() {
         {/* Mobile Nav */}
         {mobileMenuOpen && (
           <nav className="mobile-nav">
-            <Link href="/catalogue" onClick={() => setMobileMenuOpen(false)}>Catalogue</Link>
-            <Link href="/catalogue?category=beni-ouarain" onClick={() => setMobileMenuOpen(false)}>Beni Ouarain</Link>
-            <Link href="/catalogue?category=azilal" onClick={() => setMobileMenuOpen(false)}>Azilal</Link>
-            <Link href="/catalogue?category=kilim" onClick={() => setMobileMenuOpen(false)}>Kilims</Link>
+            <Link href="/catalogue" onClick={() => setMobileMenuOpen(false)}>Tout le Catalogue</Link>
+            <Link href="/catalogue?category=beni-ouarain" onClick={() => setMobileMenuOpen(false)}>Tapis Berbères</Link>
+            <Link href="/catalogue?category=coussins" onClick={() => setMobileMenuOpen(false)}>Coussins</Link>
+            <Link href="/catalogue?category=plaids" onClick={() => setMobileMenuOpen(false)}>Plaids</Link>
+            <Link href="/catalogue?category=tableaux" onClick={() => setMobileMenuOpen(false)}>Art Mural</Link>
             <Link href="/about" onClick={() => setMobileMenuOpen(false)}>Notre Histoire</Link>
           </nav>
         )}

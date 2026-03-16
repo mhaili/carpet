@@ -37,6 +37,7 @@ export default function RootLayout({ children }) {
       >
         <ThemeProvider>
           <CartProvider>
+            <div className="amazigh-grid-bg" />
             <Header />
             <main>
               {children}

@@ -1,6 +1,7 @@
 import db from './db.js';
+import bcrypt from 'bcryptjs';
 
-const seed = () => {
+const seed = async () => {
     console.log('Seeding process started...');
 
     // Clear existing data
@@ -16,41 +17,43 @@ const seed = () => {
 
     // Insert Categories
     const insertCat = db.prepare('INSERT INTO categories (id, name, slug, description) VALUES (?, ?, ?, ?)');
-    insertCat.run(1, 'Beni Ouarain', 'beni-ouarain', 'Tapis berbères caractérisés par leur laine épaisse blanc cassé et leurs motifs géométriques en losanges bruns ou noirs.');
-    insertCat.run(2, 'Azilal', 'azilal', 'Tapis marocains originaires des montagnes du Haut Atlas, connus pour leurs couleurs vibrantes et leurs motifs asymétriques.');
-    insertCat.run(3, 'Boucherouite', 'boucherouite', 'Tapis colorés créés à partir de morceaux de tissus recyclés (coton, nylon, laine), uniques et expressifs.');
-    insertCat.run(4, 'Kilim', 'kilim', 'Tapis tissés à plat, sans velours, légers et réversibles, avec des motifs souvent géométriques complexes.');
+    insertCat.run(1, 'Beni Ouarain', 'beni-ouarain', 'Tapis berbères laine épaisse blanc cassé et motifs géométriques noirs.');
+    insertCat.run(2, 'Azilal', 'azilal', 'Tapis marocains aux couleurs vibrantes et motifs asymétriques du Haut Atlas.');
+    insertCat.run(3, 'Boucherouite', 'boucherouite', 'Tapis colorés créés à partir de morceaux de tissus recyclés, pièces uniques.');
+    insertCat.run(4, 'Kilims', 'kilim', 'Tapis tissés à plat, légers et réversibles aux motifs géométriques.');
+    insertCat.run(5, 'Coussins Berbères', 'coussins', 'Coussins en laine Sabra et textiles traditionnels.');
+    insertCat.run(6, 'Plaids', 'plaids', 'Plaids faits main en coton et soie de cactus.');
+    insertCat.run(7, 'Tableaux Décoratifs', 'tableaux', 'Art mural inspiré des symboles et motifs amazighs.');
 
-    // Specific product insertion logic
-    const insertProd = db.prepare('INSERT INTO products (id, title, slug, description, category_id, base_price) VALUES (?, ?, ?, ?, ?, ?)');
+    const insertProd = db.prepare('INSERT INTO products (id, title, slug, description, details, category_id, base_price) VALUES (?, ?, ?, ?, ?, ?, ?)');
     const insertImage = db.prepare('INSERT INTO product_images (product_id, url, is_primary) VALUES (?, ?, ?)');
     const insertVariant = db.prepare('INSERT INTO product_variants (product_id, size, stock, price_modifier) VALUES (?, ?, ?, ?)');
 
-    // Product 1
-    insertProd.run(1, 'Tapis Beni Ouarain Authentique', 'tapis-beni-ouarain-authentique', 'Magnifique tapis Beni Ouarain noué à la main, laine de mouton naturelle, motifs losanges classiques.', 1, 450);
+    // --- RUGS ---
+    insertProd.run(1, 'Tapis Beni Ouarain Royal', 'tapis-beni-ouarain-royal', 'Magnifique tapis Beni Ouarain noué à la main, laine de mouton naturelle supérieure.', '100% Laine, Fait main', 1, 450);
     insertImage.run(1, 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=800&auto=format&fit=crop', 1);
-    insertVariant.run(1, '150 x 100 cm', 5, 0);
-    insertVariant.run(1, '200 x 150 cm', 3, 200);
-    insertVariant.run(1, '300 x 200 cm', 1, 550);
+    insertVariant.run(1, '200 x 150 cm', 3, 0);
 
-    // Product 2
-    insertProd.run(2, 'Tapis Azilal Coloré', 'tapis-azilal-colore', 'Un éclat de couleurs pour votre salon avec ce tapis Azilal aux symboles traditionnels berbères tissés à la main.', 2, 380);
-    insertImage.run(2, 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=800&auto=format&fit=crop', 1);
-    insertVariant.run(2, '200 x 150 cm', 4, 0);
-    insertVariant.run(2, '250 x 150 cm', 2, 100);
+    // --- COUSSINS ---
+    insertProd.run(10, 'Coussin Sabra Or', 'coussin-sabra-or', 'Coussin en soie de cactus brodé à la main, reflets dorés.', 'Soie de cactus, 50x50cm', 5, 45);
+    insertImage.run(10, 'https://images.unsplash.com/photo-1579656335342-5f3b0928e4eb?q=80&w=600&auto=format&fit=crop', 1);
+    insertVariant.run(10, '50 x 50 cm', 10, 0);
 
-    // Product 3
-    insertProd.run(3, 'Tapis Boucherouite Vintage', 'tapis-boucherouite-vintage', 'Éco-responsable et vibrant, ce tapis Boucherouite est composé de textiles recyclés. Pièce unique.', 3, 290);
-    insertImage.run(3, 'https://images.unsplash.com/photo-1550581190-9c1c48d21d6c?q=80&w=800&auto=format&fit=crop', 1);
-    insertVariant.run(3, '180 x 120 cm (Pièce Unique)', 1, 0);
+    // --- PLAIDS ---
+    insertProd.run(20, 'Plaid Berbère Pompons', 'plaid-berbere-pompons', 'Plaid en coton lourd avec pompons traditionnels noirs.', 'Coton, 200x300cm', 6, 85);
+    insertImage.run(20, 'https://images.unsplash.com/photo-1606131731446-5568d87113aa?q=80&w=600&auto=format&fit=crop', 1);
+    insertVariant.run(20, 'Standard', 5, 0);
 
-    // Product 4
-    insertProd.run(4, 'Grand Kilim Amazigh', 'grand-kilim-amazigh', 'Tapis kilim fin et élégant, parfait pour une salle à manger ou un couloir, motifs géométriques rouge et ocre.', 4, 320);
-    insertImage.run(4, 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?q=80&w=800&auto=format&fit=crop', 1);
-    insertVariant.run(4, '250 x 150 cm', 5, 0);
-    insertVariant.run(4, '300 x 200 cm', 2, 150);
+    // --- TABLEAUX ---
+    insertProd.run(30, 'Tableau Symbole Yaz ⵣ', 'tableau-yaz-art', 'Oeuvre murale représentant le symbole de la liberté Amazigh.', 'Peinture sur toile, 60x80cm', 7, 120);
+    insertImage.run(30, 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop', 1);
+    insertVariant.run(30, '60 x 80 cm', 2, 0);
 
-    console.log('Database seeded successfully.');
+    // Admin Account
+    const hash = bcrypt.hashSync('Admin1234!', 10);
+    db.prepare('INSERT INTO customers (email, password_hash, first_name, last_name) VALUES (?, ?, ?, ?)').run('admin@amazigh.com', hash, 'Admin', 'AmazighArtes');
+
+    console.log('Database seeded with multiple product types successfully.');
 };
 
 seed();

@@ -17,10 +17,10 @@ export default function Footer() {
                 <div className="footer-col">
                     <h4>Collections</h4>
                     <ul>
-                        <li><Link href="/catalogue?category=beni-ouarain">Beni Ouarain</Link></li>
-                        <li><Link href="/catalogue?category=azilal">Azilal</Link></li>
-                        <li><Link href="/catalogue?category=boucherouite">Boucherouite</Link></li>
-                        <li><Link href="/catalogue?category=kilim">Kilims</Link></li>
+                        <li><Link href="/catalogue?category=beni-ouarain">Tapis Berbères</Link></li>
+                        <li><Link href="/catalogue?category=coussins">Coussins Sabra</Link></li>
+                        <li><Link href="/catalogue?category=plaids">Plaids & Jetés</Link></li>
+                        <li><Link href="/catalogue?category=tableaux">Art Mural Berbère</Link></li>
                     </ul>
                 </div>
 
