@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { useCart } from '../../components/CartProvider';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 
 export default function CheckoutPage() {
     const { cart, cartTotal, clearCart, isInitialized } = useCart();
@@ -11,7 +10,7 @@ export default function CheckoutPage() {
 
     const [step, setStep] = useState(1);
     const [formData, setFormData] = useState({
-        firstName: '', lastName: '', email: '',
+        firstName: '', lastName: '', email: '', phone: '',
         address: '', city: '', zip: '', country: 'France',
     });
     const [isProcessing, setIsProcessing] = useState(false);
@@ -40,7 +39,11 @@ export default function CheckoutPage() {
             const res = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cartItems: cart, shippingInfo: formData, cartTotal }),
+                body: JSON.stringify({
+                    cartItems: cart,
+                    shippingInfo: formData,
+                    paymentMethod,
+                }),
             });
             const data = await res.json();
             if (!res.ok) throw new Error(data.error);
@@ -101,6 +104,12 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="form-group">
+                                    <label>Téléphone</label>
+                                    <input type="tel" name="phone" value={formData.phone} onChange={handleChange}
+                                        placeholder="+33 6 12 34 56 78" />
+                                </div>
+
+                                <div className="form-group">
                                     <label>Adresse</label>
                                     <input type="text" name="address" value={formData.address} onChange={handleChange}
                                         placeholder="Numéro et nom de rue" required />
@@ -125,9 +134,14 @@ export default function CheckoutPage() {
                                         <option>France</option>
                                         <option>Belgique</option>
                                         <option>Suisse</option>
-                                        <option>Canada</option>
-                                        <option>Maroc</option>
-                                        <option>Autre</option>
+                                        <option>Allemagne</option>
+                                        <option>Pays-Bas</option>
+                                        <option>Espagne</option>
+                                        <option>Italie</option>
+                                        <option>Portugal</option>
+                                        <option>Luxembourg</option>
+                                        <option>Autriche</option>
+                                        <option>Autre pays européen</option>
                                     </select>
                                 </div>
 
@@ -153,6 +167,7 @@ export default function CheckoutPage() {
                                                 <line x1="1" y1="10" x2="23" y2="10" />
                                             </svg>
                                             <span>Carte Bancaire</span>
+                                            <span className="pay-icons">Visa • Mastercard • CB</span>
                                         </div>
                                     </label>
 
@@ -165,18 +180,30 @@ export default function CheckoutPage() {
                                             <span>PayPal</span>
                                         </div>
                                     </label>
+
+                                    <label className={`pay-option ${paymentMethod === 'bank_transfer' ? 'selected' : ''}`}>
+                                        <input type="radio" name="pay" value="bank_transfer"
+                                            checked={paymentMethod === 'bank_transfer'}
+                                            onChange={() => setPaymentMethod('bank_transfer')} />
+                                        <div className="pay-inner">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                                <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3" />
+                                            </svg>
+                                            <span>Virement Bancaire</span>
+                                        </div>
+                                    </label>
                                 </div>
 
                                 {paymentMethod === 'card' && (
                                     <div className="card-fields">
-                                        <div className="demo-badge">Mode Démo — aucun paiement réel</div>
+                                        <div className="demo-badge">Mode Test Stripe — Utilisez 4242 4242 4242 4242</div>
                                         <div className="form-group">
                                             <label>Numéro de carte</label>
                                             <input type="text" placeholder="4242 4242 4242 4242" maxLength={19} required />
                                         </div>
                                         <div className="form-row">
                                             <div className="form-group">
-                                                <label>Date d'expiration</label>
+                                                <label>Date d&apos;expiration</label>
                                                 <input type="text" placeholder="MM / AA" required />
                                             </div>
                                             <div className="form-group">
@@ -190,6 +217,12 @@ export default function CheckoutPage() {
                                 {paymentMethod === 'paypal' && (
                                     <div className="paypal-notice">
                                         <p>Vous serez redirigé vers PayPal pour finaliser votre paiement en toute sécurité.</p>
+                                    </div>
+                                )}
+
+                                {paymentMethod === 'bank_transfer' && (
+                                    <div className="paypal-notice">
+                                        <p>Les coordonnées bancaires vous seront envoyées par email après validation de votre commande.</p>
                                     </div>
                                 )}
 
@@ -211,7 +244,7 @@ export default function CheckoutPage() {
                             <h3>Votre commande</h3>
                             <div className="summary-items">
                                 {cart.map(item => {
-                                    const price = (item.product.base_price + (item.variant.price_modifier || 0)) * item.quantity;
+                                    const price = (item.variant.price || (item.product.base_price + (item.variant.price_modifier || 0))) * item.quantity;
                                     return (
                                         <div key={`${item.product.id}-${item.variant.id}`} className="summary-item">
                                             <div className="sum-item-info">
@@ -231,11 +264,24 @@ export default function CheckoutPage() {
                                     <span>Sous-total</span><span>{cartTotal.toFixed(2)} €</span>
                                 </div>
                                 <div className="summary-line">
-                                    <span>Livraison</span><span style={{ color: '#4a7c59' }}>Gratuite</span>
+                                    <span>Livraison</span><span style={{ color: '#27ae60', fontWeight: 600 }}>Gratuite 🚚</span>
                                 </div>
                                 <div className="sum-divider"></div>
                                 <div className="summary-line total-line">
-                                    <span>Total</span><span>{cartTotal.toFixed(2)} €</span>
+                                    <span>Total TTC</span><span>{cartTotal.toFixed(2)} €</span>
+                                </div>
+                            </div>
+
+                            <div className="secure-badges">
+                                <div className="secure-item">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                                    </svg>
+                                    <span>Paiement 100% sécurisé</span>
+                                </div>
+                                <div className="secure-item">
+                                    <span>🔄</span>
+                                    <span>Retour sous 30 jours</span>
                                 </div>
                             </div>
                         </div>

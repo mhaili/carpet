@@ -1,23 +1,15 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-
-// Client ADMIN (service_role) — bypass complet du RLS — serveur uniquement
-function getSupabaseAdmin() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !serviceKey || serviceKey === 'COLLE_TA_SERVICE_ROLE_KEY_ICI') {
-        throw new Error('SUPABASE_SERVICE_ROLE_KEY manquante dans .env.local');
-    }
-
-    return createClient(url, serviceKey, {
-        auth: { persistSession: false },
-    });
-}
+import { getSession } from '../../../lib/auth';
+import path from 'path';
+import { writeFile, mkdir } from 'fs/promises';
 
 export async function POST(request) {
     try {
-        const supabaseAdmin = getSupabaseAdmin();
+        // Vérification authentification admin
+        const session = await getSession();
+        if (!session || session.user.role !== 'admin') {
+            return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
+        }
 
         const formData = await request.formData();
         const file = formData.get('file');
@@ -44,32 +36,21 @@ export async function POST(request) {
         }
 
         const ext = file.name.split('.').pop().toLowerCase();
-        const fileName = `products/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+        // Sanitize: only allow alphanumeric, dash, dot in filename
+        const safeName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
 
+        const uploadDir = path.join(process.cwd(), 'public', 'products');
+        await mkdir(uploadDir, { recursive: true });
+
+        const filePath = path.join(uploadDir, safeName);
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        const { data, error } = await supabaseAdmin.storage
-            .from('product-images')
-            .upload(fileName, buffer, {
-                contentType: file.type,
-                cacheControl: '3600',
-                upsert: false,
-            });
+        await writeFile(filePath, buffer);
 
-        if (error) {
-            console.error('Erreur Supabase upload:', error);
-            return NextResponse.json(
-                { error: `Upload échoué : ${error.message}` },
-                { status: 500 }
-            );
-        }
+        const publicUrl = `/products/${safeName}`;
 
-        const { data: { publicUrl } } = supabaseAdmin.storage
-            .from('product-images')
-            .getPublicUrl(data.path);
-
-        return NextResponse.json({ success: true, url: publicUrl, path: data.path });
+        return NextResponse.json({ success: true, url: publicUrl, path: publicUrl });
 
     } catch (err) {
         console.error('Erreur upload route:', err);

@@ -1,16 +1,10 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '../../lib/auth';
-import db from '../../lib/db';
+
+export const dynamic = 'force-dynamic';
+import { getOrdersByCustomer } from '../../lib/db';
 import LogoutButton from '../../components/LogoutButton';
 import Link from 'next/link';
-
-async function getUserOrders(customerId) {
-    return db.prepare(`
-    SELECT * FROM orders 
-    WHERE customer_id = ? 
-    ORDER BY created_at DESC
-  `).all(customerId);
-}
 
 export default async function AccountPage() {
     const session = await getSession();
@@ -20,7 +14,7 @@ export default async function AccountPage() {
     }
 
     const user = session.user;
-    const orders = await getUserOrders(user.id);
+    const orders = await getOrdersByCustomer(user.id);
 
     return (
         <div className="account-page container">
@@ -45,7 +39,7 @@ export default async function AccountPage() {
 
                     {orders.length === 0 ? (
                         <div className="no-orders">
-                            <p>Vous n'avez passé aucune commande pour le moment.</p>
+                            <p>Vous n&apos;avez passé aucune commande pour le moment.</p>
                             <Link href="/catalogue" className="btn-primary" style={{ marginTop: '1rem', display: 'inline-block' }}>
                                 Commencer mes achats
                             </Link>
@@ -71,10 +65,7 @@ export default async function AccountPage() {
                                     </div>
                                     <div className="order-body">
                                         <div className="order-totals">
-                                            <div>Total TTC : <strong>{order.total.toFixed(2)} €</strong></div>
-                                            <Link href={`/account/orders/${order.order_number}`} className="view-order-link">
-                                                Voir les détails →
-                                            </Link>
+                                            <div>Total TTC : <strong>{parseFloat(order.total).toFixed(2)} €</strong></div>
                                         </div>
                                     </div>
                                 </div>

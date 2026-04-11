@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import db from '../../../../lib/db';
+import { getCustomerByEmail } from '../../../../lib/db';
 import { login } from '../../../../lib/auth';
 
 export async function POST(request) {
@@ -11,7 +11,7 @@ export async function POST(request) {
             return NextResponse.json({ error: "L'email et le mot de passe sont requis" }, { status: 400 });
         }
 
-        const customer = db.prepare('SELECT * FROM customers WHERE email = ?').get(email);
+        const customer = await getCustomerByEmail(email);
         if (!customer) {
             return NextResponse.json({ error: 'Identifiants incorrects' }, { status: 401 });
         }
@@ -26,7 +26,7 @@ export async function POST(request) {
             email: customer.email,
             firstName: customer.first_name,
             lastName: customer.last_name,
-            role: customer.email === 'admin@amazigh.com' ? 'admin' : 'customer',
+            role: customer.role || 'customer',
         };
 
         await login(user);

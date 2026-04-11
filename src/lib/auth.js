@@ -1,7 +1,10 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
-const secretKey = process.env.JWT_SECRET_KEY || 'not-so-secret-key-for-dev';
+const secretKey = process.env.JWT_SECRET_KEY;
+if (!secretKey) {
+    throw new Error('JWT_SECRET_KEY manquante dans .env.local — définissez une clé secrète forte.');
+}
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload) {

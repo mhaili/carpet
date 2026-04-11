@@ -90,13 +90,13 @@
 
 .stat-value {
     font-size: 2.5rem;
-    font-family: var(--font-serif);
+    font-family: var(--font-heading);
     font-weight: bold;
-    color: var(--accent-primary);
+    color: var(--accent-color);
 }
 
 .view-order-link {
-    color: var(--accent-primary);
+    color: var(--accent-color);
     font-weight: 500;
     font-size: 0.9rem;
 }

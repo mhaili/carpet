@@ -1,11 +1,10 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { useTheme } from './ThemeProvider';
 import { useCart } from './CartProvider';
-
-import AmazighSymbol from './AmazighSymbol';
 
 export default function Header() {
   const { theme, toggleTheme } = useTheme();
@@ -23,25 +22,26 @@ export default function Header() {
     <>
       {/* Promo Banner */}
       <div className="promo-banner">
-        <p>Livraison offerte dès 300 € • Tapis faits main au Maroc • Pièces authentiques &amp; uniques</p>
+        <p>Livraison offerte dès 100 € d&apos;achat &mdash; Pièces uniques faites main au Maroc</p>
       </div>
 
       <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
         <div className="header-inner">
           {/* Logo */}
           <Link href="/" className="site-logo">
-            <AmazighSymbol size={scrolled ? 24 : 32} animate={true} color="var(--accent-color)" strokeWidth={3} />
-            <span>Amazigh<em>Artes</em></span>
+            <img src={theme === 'dark' ? '/logo-dark.png' : '/logo.png'} alt="Tafokt Rugs" className="logo-img" />
           </Link>
 
           {/* Desktop Nav */}
           <nav className="site-nav" aria-label="Navigation principale">
+            <Link href="/" className="nav-link">Accueil</Link>
+            <Link href="/about" className="nav-link">Histoire</Link>
             <Link href="/catalogue" className="nav-link">Catalogue</Link>
             <Link href="/catalogue?category=beni-ouarain" className="nav-link">Tapis</Link>
             <Link href="/catalogue?category=coussins" className="nav-link">Coussins</Link>
             <Link href="/catalogue?category=plaids" className="nav-link">Plaids</Link>
-            <Link href="/catalogue?category=tableaux" className="nav-link">Art Berbère</Link>
-            <Link href="/about" className="nav-link">Histoire</Link>
+            <Link href="/catalogue?category=tableaux" className="nav-link">Art</Link>
+            <Link href="/contact" className="nav-link">Contact</Link>
           </nav>
 
           {/* Actions */}
@@ -104,12 +104,14 @@ export default function Header() {
         {/* Mobile Nav */}
         {mobileMenuOpen && (
           <nav className="mobile-nav">
-            <Link href="/catalogue" onClick={() => setMobileMenuOpen(false)}>Tout le Catalogue</Link>
+            <Link href="/" onClick={() => setMobileMenuOpen(false)}>Accueil</Link>
+            <Link href="/about" onClick={() => setMobileMenuOpen(false)}>Notre Histoire</Link>
+            <Link href="/catalogue" onClick={() => setMobileMenuOpen(false)}>Catalogue</Link>
             <Link href="/catalogue?category=beni-ouarain" onClick={() => setMobileMenuOpen(false)}>Tapis Berbères</Link>
             <Link href="/catalogue?category=coussins" onClick={() => setMobileMenuOpen(false)}>Coussins</Link>
             <Link href="/catalogue?category=plaids" onClick={() => setMobileMenuOpen(false)}>Plaids</Link>
-            <Link href="/catalogue?category=tableaux" onClick={() => setMobileMenuOpen(false)}>Art Mural</Link>
-            <Link href="/about" onClick={() => setMobileMenuOpen(false)}>Notre Histoire</Link>
+            <Link href="/catalogue?category=tableaux" onClick={() => setMobileMenuOpen(false)}>Art</Link>
+            <Link href="/contact" onClick={() => setMobileMenuOpen(false)}>Contact</Link>
           </nav>
         )}
       </header></>

@@ -8,7 +8,7 @@ export function CartProvider({ children }) {
     const [cart, setCart] = useState([]);
     const [isInitialized, setIsInitialized] = useState(false);
 
-    // Load from localeStorage on mount
+    // Load from localStorage on mount
     useEffect(() => {
         const savedCart = localStorage.getItem('cart');
         if (savedCart) {
@@ -35,12 +35,10 @@ export function CartProvider({ children }) {
             );
 
             if (existingItemIndex >= 0) {
-                // Item exists, update quantity
                 const newCart = [...prevCart];
                 newCart[existingItemIndex].quantity += quantity;
                 return newCart;
             } else {
-                // Add new item
                 return [...prevCart, { product, variant, quantity }];
             }
         });
@@ -73,8 +71,9 @@ export function CartProvider({ children }) {
 
     const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
 
+    // Use variant.price directly (already includes the correct sale price)
     const cartTotal = cart.reduce((total, item) => {
-        const price = item.product.base_price + (item.variant.price_modifier || 0);
+        const price = item.variant.price || (item.product.base_price + (item.variant.price_modifier || 0));
         return total + (price * item.quantity);
     }, 0);
 

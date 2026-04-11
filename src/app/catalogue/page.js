@@ -1,58 +1,73 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import db from '../../lib/db';
+import { getProducts, getParentCategories, getSubCategories, getCategoryBySlug } from '../../lib/db';
 
-const categoryImages = {
-    'beni-ouarain': 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?q=80&w=600&auto=format&fit=crop',
-    'azilal': 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=600&auto=format&fit=crop',
-    'boucherouite': 'https://images.unsplash.com/photo-1550581190-9c1c48d21d6c?q=80&w=600&auto=format&fit=crop',
-    'kilim': 'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?q=80&w=600&auto=format&fit=crop',
-    'coussins': 'https://images.unsplash.com/photo-1579656335342-5f3b0928e4eb?q=80&w=600&auto=format&fit=crop',
-    'plaids': 'https://images.unsplash.com/photo-1606131731446-5568d87113aa?q=80&w=600&auto=format&fit=crop',
-    'tableaux': 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?q=80&w=600&auto=format&fit=crop',
-};
-
-async function getProducts(categorySlug) {
-    if (categorySlug) {
-        return db.prepare(`
-      SELECT p.*, c.name as category_name, c.slug as category_slug,
-             (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image_url
-      FROM products p
-      JOIN categories c ON p.category_id = c.id
-      WHERE c.slug = ?
-    `).all(categorySlug);
-    }
-    return db.prepare(`
-    SELECT p.*, c.name as category_name, c.slug as category_slug,
-           (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image_url
-    FROM products p
-    JOIN categories c ON p.category_id = c.id
-  `).all();
-}
-
-async function getCategories() {
-    return db.prepare('SELECT * FROM categories').all();
-}
+export const dynamic = 'force-dynamic';
 
 export default async function Catalogue({ searchParams }) {
     const params = await searchParams;
     const categoryFilter = params?.category;
+    const regionFilter = params?.region;
 
-    const products = await getProducts(categoryFilter);
-    const categories = await getCategories();
+    // Get parent categories — Tapis first (produit central), then the rest
+    const allParents = await getParentCategories();
+    const parentCategories = [
+        ...allParents.filter(c => c.slug === 'tapis'),
+        ...allParents.filter(c => c.slug !== 'tapis'),
+    ];
 
-    const activeCategory = categories.find(c => c.slug === categoryFilter);
+    // Find active parent category
+    const activeParent = parentCategories.find(c => c.slug === categoryFilter);
+
+    // Get sub-categories if viewing a parent with children (e.g. Tapis → regions)
+    let subCategories = [];
+    if (activeParent) {
+        subCategories = await getSubCategories(activeParent.id);
+    }
+
+    // Determine which category slug to use for product filtering
+    const activeRegion = regionFilter ? subCategories.find(c => c.slug === regionFilter) : null;
+    const filterSlug = regionFilter || categoryFilter || null;
+
+    // Get active category for hero display
+    const displayCategory = activeRegion || activeParent;
+
+    const products = await getProducts(filterSlug);
 
     return (
         <div className="catalogue-page">
             {/* Hero Banner */}
             <section className="catalogue-hero">
-                {activeCategory ? (
+                {displayCategory ? (
+                    <>
+                        <div className="catalogue-hero-bg">
+                            {displayCategory.image_url && (
+                                <Image
+                                    src={displayCategory.image_url}
+                                    alt={displayCategory.name}
+                                    fill
+                                    style={{ objectFit: 'cover' }}
+                                    priority
+                                />
+                            )}
+                            <div className="catalogue-hero-overlay" />
+                        </div>
+                        <div className="catalogue-hero-content">
+                            <span className="section-label" style={{ color: 'rgba(255,255,255,0.7)' }}>Collection</span>
+                            <h1 style={{ color: 'white', fontSize: 'clamp(3rem, 6vw, 5rem)', fontWeight: 300 }}>
+                                {displayCategory.name}
+                            </h1>
+                            <p style={{ color: 'rgba(255,255,255,0.8)', maxWidth: '500px', marginTop: '1rem' }}>
+                                {displayCategory.description}
+                            </p>
+                        </div>
+                    </>
+                ) : (
                     <>
                         <div className="catalogue-hero-bg">
                             <Image
-                                src={categoryImages[activeCategory.slug] || categoryImages['kilim']}
-                                alt={activeCategory.name}
+                                src="/products/tapis-3-a.jpg"
+                                alt="Collection tapis berbères"
                                 fill
                                 style={{ objectFit: 'cover' }}
                                 priority
@@ -60,31 +75,25 @@ export default async function Catalogue({ searchParams }) {
                             <div className="catalogue-hero-overlay" />
                         </div>
                         <div className="catalogue-hero-content">
-                            <span className="section-label" style={{ color: 'rgba(255,255,255,0.7)' }}>Collection</span>
+                            <span className="section-label" style={{ color: 'rgba(255,255,255,0.7)' }}>Toute la Collection</span>
                             <h1 style={{ color: 'white', fontSize: 'clamp(3rem, 6vw, 5rem)', fontWeight: 300 }}>
-                                {activeCategory.name}
+                                Catalogue
                             </h1>
                             <p style={{ color: 'rgba(255,255,255,0.8)', maxWidth: '500px', marginTop: '1rem' }}>
-                                {activeCategory.description}
+                                Découvrez l&apos;ensemble de nos tapis berbères faits main
                             </p>
                         </div>
                     </>
-                ) : (
-                    <div className="catalogue-flat-header container">
-                        <span className="section-label">Toute la Collection</span>
-                        <h1>Catalogue</h1>
-                        <p>Découvrez l'ensemble de nos tapis berbères faits main</p>
-                    </div>
                 )}
             </section>
 
             <div className="container catalogue-body">
-                {/* Filters / Category Nav */}
+                {/* Main Category Tabs */}
                 <nav className="filter-nav">
                     <Link href="/catalogue" className={`filter-link ${!categoryFilter ? 'active' : ''}`}>
                         Tout voir
                     </Link>
-                    {categories.map(cat => (
+                    {parentCategories.map(cat => (
                         <Link
                             key={cat.id}
                             href={`/catalogue?category=${cat.slug}`}
@@ -95,6 +104,27 @@ export default async function Catalogue({ searchParams }) {
                     ))}
                 </nav>
 
+                {/* Sub-category tabs (regions) — shown when a parent with children is active */}
+                {subCategories.length > 0 && (
+                    <nav className="filter-sub-nav">
+                        <Link
+                            href={`/catalogue?category=${categoryFilter}`}
+                            className={`filter-sub-link ${!regionFilter ? 'active' : ''}`}
+                        >
+                            Tous les {activeParent?.name}
+                        </Link>
+                        {subCategories.map(sub => (
+                            <Link
+                                key={sub.id}
+                                href={`/catalogue?category=${categoryFilter}&region=${sub.slug}`}
+                                className={`filter-sub-link ${regionFilter === sub.slug ? 'active' : ''}`}
+                            >
+                                {sub.name}
+                            </Link>
+                        ))}
+                    </nav>
+                )}
+
                 {/* Results Count */}
                 <div className="results-info">
                     <span>{products.length} produit{products.length !== 1 ? 's' : ''}</span>
@@ -103,37 +133,55 @@ export default async function Catalogue({ searchParams }) {
                 {/* Products Grid */}
                 {products.length === 0 ? (
                     <div className="no-results">
-                        <p>Aucun produit dans cette collection pour l'instant.</p>
+                        <p>Aucun produit dans cette collection pour l&apos;instant.</p>
                         <Link href="/catalogue" className="btn-secondary" style={{ marginTop: '1.5rem', display: 'inline-block' }}>
                             Voir tout le catalogue
                         </Link>
                     </div>
                 ) : (
                     <div className="catalogue-grid">
-                        {products.map((product, index) => (
-                            <Link href={`/product/${product.slug}`} key={product.id} className="product-card">
-                                <div className="product-image-container">
-                                    {product.image_url ? (
-                                        <Image
-                                            src={product.image_url}
-                                            alt={product.title}
-                                            fill
-                                            style={{ objectFit: 'cover' }}
-                                        />
-                                    ) : (
-                                        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-                                            Image bientôt disponible
+                        {products.map((product) => {
+                            const salePrice = product.variants?.[0]?.price || product.base_price;
+                            const originalPrice = product.variants?.[0]?.original_price || salePrice * 2;
+                            const hasDiscount = product.is_on_sale && originalPrice > salePrice;
+                            const firstSize = product.variants?.[0]?.size || '';
+
+                            return (
+                                <Link href={`/product/${product.slug}`} key={product.id} className="product-card">
+                                    <div className="product-image-container">
+                                        {product.image_url ? (
+                                            <Image
+                                                src={product.image_url}
+                                                alt={product.title}
+                                                fill
+                                                style={{ objectFit: 'cover' }}
+                                            />
+                                        ) : (
+                                            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                                                Image bientôt disponible
+                                            </div>
+                                        )}
+                                        {hasDiscount && (
+                                            <span className="badge-discount">-{product.discount_percent}%</span>
+                                        )}
+                                        {firstSize && (
+                                            <span className="badge-size">{firstSize}</span>
+                                        )}
+                                    </div>
+                                    <div className="product-info">
+                                        <span className="product-category">{product.category_name}</span>
+                                        <p className="product-title">{product.title}</p>
+                                        <div className="product-price-row">
+                                            <span className="product-price sale">À partir de {salePrice.toFixed(0)} €</span>
+                                            {hasDiscount && (
+                                                <span className="product-price original">{originalPrice.toFixed(0)} €</span>
+                                            )}
                                         </div>
-                                    )}
-                                    {index % 3 === 0 && <span className="badge-unique">Pièce Unique</span>}
-                                </div>
-                                <div className="product-info">
-                                    <span className="product-category">{product.category_name}</span>
-                                    <p className="product-title">{product.title}</p>
-                                    <span className="product-price">À partir de {product.base_price.toFixed(2)} €</span>
-                                </div>
-                            </Link>
-                        ))}
+                                        <span className="product-shipping-badge">Livraison Gratuite</span>
+                                    </div>
+                                </Link>
+                            );
+                        })}
                     </div>
                 )}
             </div></div>

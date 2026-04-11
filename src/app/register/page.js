@@ -30,6 +30,19 @@ export default function RegisterPage() {
             return;
         }
 
+        if (formData.password.length < 8) {
+            setError('Le mot de passe doit contenir au moins 8 caractères');
+            return;
+        }
+        if (!/[A-Z]/.test(formData.password)) {
+            setError('Le mot de passe doit contenir au moins une majuscule');
+            return;
+        }
+        if (!/[0-9]/.test(formData.password)) {
+            setError('Le mot de passe doit contenir au moins un chiffre');
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -116,7 +129,11 @@ export default function RegisterPage() {
                             value={formData.password}
                             onChange={handleChange}
                             required
+                            minLength={8}
                         />
+                        <small style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                            Min. 8 caractères, 1 majuscule, 1 chiffre
+                        </small>
                     </div>
 
                     <div className="form-group">

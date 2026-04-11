@@ -43,8 +43,11 @@ export default function CartPage() {
                     {/* Items */}
                     <div className="cart-items">
                         {cart.map((item) => {
-                            const itemPrice = item.product.base_price + (item.variant.price_modifier || 0);
-                            const primaryImg = item.product.images?.find(i => i.is_primary)?.url || item.product.images?.[0]?.url;
+                            const itemPrice = item.variant.price || (item.product.base_price + (item.variant.price_modifier || 0));
+                            const originalPrice = item.variant.original_price || itemPrice * 2;
+                            const hasDiscount = originalPrice > itemPrice;
+                            const primaryImg = item.product.images?.find(i => i.is_primary)?.url || item.product.images?.[0]?.url || item.product.image_url;
+                            
                             return (
                                 <div key={`${item.product.id}-${item.variant.id}`} className="cart-item">
                                     <div className="item-img">
@@ -78,7 +81,12 @@ export default function CartPage() {
                                                     disabled={item.quantity >= (item.variant.stock || 99)}
                                                 >+</button>
                                             </div>
-                                            <span className="item-total">{(itemPrice * item.quantity).toFixed(2)} €</span>
+                                            <div className="item-prices">
+                                                <span className="item-total sale">{(itemPrice * item.quantity).toFixed(2)} €</span>
+                                                {hasDiscount && (
+                                                    <span className="item-total original">{(originalPrice * item.quantity).toFixed(2)} €</span>
+                                                )}
+                                            </div>
                                             <button
                                                 className="remove-btn"
                                                 onClick={() => removeFromCart(item.product.id, item.variant.id)}
@@ -105,7 +113,7 @@ export default function CartPage() {
                         </div>
                         <div className="summary-line">
                             <span>Livraison</span>
-                            <span style={{ color: '#4a7c59' }}>Gratuite</span>
+                            <span style={{ color: '#27ae60', fontWeight: 600 }}>Gratuite 🚚</span>
                         </div>
                         <div className="summary-divider"></div>
                         <div className="summary-line summary-total">
@@ -126,6 +134,13 @@ export default function CartPage() {
                                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
                             </svg>
                             <span>Paiements 100% sécurisés</span>
+                        </div>
+
+                        <div className="payment-icons-row">
+                            <span>Visa</span>
+                            <span>Mastercard</span>
+                            <span>PayPal</span>
+                            <span>CB</span>
                         </div>
                     </div>
                 </div>

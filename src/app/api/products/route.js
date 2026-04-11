@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server';
-import db from '../../../lib/db';
+import { getProducts, createProduct, deleteProduct } from '../../../lib/db';
+import { getSession } from '../../../lib/auth';
 
 export async function GET() {
     try {
-        const products = db.prepare(`
-            SELECT p.*, c.name as category_name, c.slug as category_slug,
-                   (SELECT url FROM product_images WHERE product_id = p.id AND is_primary = 1 LIMIT 1) as image_url
-            FROM products p
-            JOIN categories c ON p.category_id = c.id
-            ORDER BY p.created_at DESC
-        `).all();
-
+        const products = await getProducts();
         return NextResponse.json(products);
     } catch (err) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -19,55 +13,68 @@ export async function GET() {
 
 export async function POST(request) {
     try {
-        const body = await request.json();
-        const { title, slug, description, details, category_id, base_price, imageUrl } = body;
+        const session = await getSession();
+        if (!session || session.user.role !== 'admin') {
+            return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
+        }
 
-        if (!title || !slug || !category_id || !base_price) {
+        const body = await request.json();
+        const { title, slug, description, details, category_id, price_per_sqm, base_price, imageUrls, imageUrl, variants } = body;
+
+        if (!title || !slug || !category_id) {
             return NextResponse.json(
-                { error: 'Champs obligatoires manquants : title, slug, category_id, base_price' },
+                { error: 'Champs obligatoires manquants : title, slug, category_id' },
                 { status: 400 }
             );
         }
 
-        // Vérifier que le slug est unique
-        const existing = db.prepare('SELECT id FROM products WHERE slug = ?').get(slug);
-        if (existing) {
-            return NextResponse.json(
-                { error: `Un produit avec le slug "${slug}" existe déjà.` },
-                { status: 409 }
-            );
-        }
+        // Support both legacy single imageUrl and new imageUrls array
+        const urls = imageUrls && imageUrls.length > 0 ? imageUrls : (imageUrl ? [imageUrl] : []);
 
-        // Insertion du produit (transaction atomique)
-        const insertProduct = db.transaction(() => {
-            const result = db.prepare(`
-                INSERT INTO products (title, slug, description, details, category_id, base_price)
-                VALUES (?, ?, ?, ?, ?, ?)
-            `).run(title, slug, description || null, details || null, category_id, parseFloat(base_price));
-
-            const productId = result.lastInsertRowid;
-
-            // Si une image a été uploadée, on l'enregistre
-            if (imageUrl) {
-                db.prepare(`
-                    INSERT INTO product_images (product_id, url, alt, is_primary)
-                    VALUES (?, ?, ?, 1)
-                `).run(productId, imageUrl, title);
-            }
-
-            return { id: productId };
+        const product = await createProduct({
+            title,
+            slug,
+            description,
+            details,
+            category_id,
+            price_per_sqm: price_per_sqm || 120,
+            original_price_per_sqm: (price_per_sqm || 120) * 2,
+            base_price: base_price || 0,
+            imageUrls: urls,
+            variants,
         });
-
-        const { id } = insertProduct();
 
         return NextResponse.json({
             success: true,
-            id,
+            id: product.id,
             message: `Produit "${title}" créé avec succès`,
         }, { status: 201 });
 
     } catch (err) {
         console.error('Erreur création produit:', err);
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}
+
+export async function DELETE(request) {
+    try {
+        const session = await getSession();
+        if (!session || session.user.role !== 'admin') {
+            return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
+        }
+
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'ID produit requis' }, { status: 400 });
+        }
+
+        await deleteProduct(id);
+
+        return NextResponse.json({ success: true });
+    } catch (err) {
+        console.error('Erreur suppression produit:', err);
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
